@@ -1,32 +1,34 @@
 "use client";
 import React, { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const [role, setRole] = useState<"student" | "admin">("student");
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setError(""); // Clear previous errors
 
-    // Demo credentials
-    const DEMO_ADMIN = { id: "admin123", password: "password123" };
-    const DEMO_STUDENT = { id: "stu001", password: "student123" };
+    // Call the signIn function with the 'credentials' provider
+    const result = await signIn("credentials", {
+      redirect: false, // Don't redirect, we'll handle it
+      id,
+      password,
+    });
 
-    if (role === "admin") {
-      if (id === DEMO_ADMIN.id && password === DEMO_ADMIN.password) {
-        alert("✅ Admin Login Successful");
-        window.location.href = "/admin/dashboard";
-      } else {
-        setError("❌ Invalid Admin ID or Password");
-      }
+    if (result?.error) {
+      setError("❌ Invalid ID or Password");
     } else {
-      if (id === DEMO_STUDENT.id && password === DEMO_STUDENT.password) {
-        alert("✅ Student Login Successful");
-        window.location.href = "/student/dashboard";
+      // Login was successful, redirect based on the selected role
+      if (role === "admin") {
+        router.push("/admin/dashboard");
       } else {
-        setError("❌ Invalid Student ID or Password");
+        router.push("/student/dashboard");
       }
     }
   }
@@ -121,16 +123,14 @@ export default function LandingPage() {
             </form>
             
             {/* Sign-up Option */}
-            {role === "student" && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
-                  Don't have an account?{" "}
-                  <a href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
-                    Sign up
-                  </a>
-                </p>
-              </div>
-            )}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <a href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
+                  Sign up
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </main>
