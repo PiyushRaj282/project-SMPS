@@ -1,39 +1,33 @@
-import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { hash } from "bcryptjs";
+import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const { name, regNumber, email, cgpa, department, password } = data;
+    const body = await req.json();
+    const { name, regNumber, email, cgpa, department, password } = body;
 
     if (!name || !regNumber || !email || !cgpa || !department || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    // Check if student already exists
-    const existing = await prisma.student.findUnique({
-      where: { studentId: regNumber },
-    });
-    if (existing) {
-      return NextResponse.json({ error: "Student already exists" }, { status: 400 });
-    }
+    const hashedPassword = await hash(password, 10);
 
     const student = await prisma.student.create({
       data: {
+        studentId: regNumber, 
         name,
-        studentId: regNumber,
         email,
         cgpa: parseFloat(cgpa),
         department,
-        password, // ⚠ hash in production
+        password: hashedPassword,
       },
     });
 
-    return NextResponse.json({ success: true, student }, { status: 201 });
-  } catch (error: any) {
-    console.error("Signup error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ message: "Student created", student }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ message: err.message || "Error creating student" }, { status: 500 });
   }
 }

@@ -29,7 +29,6 @@ export default function StudentSignup() {
     setSuccess("");
     setIsLoading(true);
 
-    // Basic validation
     if (
       !formData.name ||
       !formData.regNumber ||
@@ -83,7 +82,7 @@ export default function StudentSignup() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Navbar */}
+
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
@@ -110,7 +109,6 @@ export default function StudentSignup() {
           </p>
 
           <form onSubmit={handleSignup} className="space-y-6">
-            {/* Name */}
             <div>
               <label
                 htmlFor="name"
@@ -129,7 +127,6 @@ export default function StudentSignup() {
               />
             </div>
 
-            {/* Registration Number */}
             <div>
               <label
                 htmlFor="regNumber"
@@ -148,7 +145,6 @@ export default function StudentSignup() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -167,7 +163,6 @@ export default function StudentSignup() {
               />
             </div>
 
-            {/* Department */}
             <div>
               <label
                 htmlFor="department"
@@ -191,7 +186,6 @@ export default function StudentSignup() {
               </select>
             </div>
 
-            {/* CGPA */}
             <div>
               <label
                 htmlFor="cgpa"
@@ -213,7 +207,6 @@ export default function StudentSignup() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -246,7 +239,6 @@ export default function StudentSignup() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-gray-100 py-4 text-center text-gray-500 text-sm">
         © {new Date().getFullYear()} College Placement Cell. All rights reserved.
       </footer>
