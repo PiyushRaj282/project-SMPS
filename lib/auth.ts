@@ -35,12 +35,17 @@ export const authOptions: NextAuthOptions = {
           const isValid = await compare(password, admin.password);
           if (!isValid) return null;
 
-          return { id: admin.id, name: admin.name, email: admin.email, role: "admin" };
+          return {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            role: "admin",
+          };
         }
 
         if (role === "student") {
           const student = await prisma.student.findUnique({
-            where: { studentId: id }, 
+            where: { studentId: id },
           });
           console.log("Student from DB:", student);
 
@@ -48,7 +53,13 @@ export const authOptions: NextAuthOptions = {
           const isValid = await compare(password, student.password);
           if (!isValid) return null;
 
-          return { id: student.id, name: student.name, email: student.email, role: "student" };
+          return {
+            id: student.id,
+            name: student.name,
+            email: student.email,
+            role: "student",
+            studentId: student.studentId, 
+          };
         }
 
         return null;
@@ -57,20 +68,22 @@ export const authOptions: NextAuthOptions = {
   ],
 
   pages: {
-    signIn: "/",   
-    error: "/",    
+    signIn: "/",
+    error: "/",
   },
 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
+        token.studentId = (user as any).studentId || null; // ✅ add to JWT
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         (session.user as any).role = token.role;
+        (session.user as any).studentId = token.studentId; // ✅ add to session
       }
       return session;
     },

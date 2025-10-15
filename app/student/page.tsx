@@ -1,40 +1,66 @@
 "use client";
-import React, { useState } from "react";
-import { FaUserCircle, FaBriefcase, FaCheckCircle, FaLaptop, FaMapMarkerAlt, FaTag } from "react-icons/fa";
-
-// Mock Data (for demo)
-const student = {
-  id: "stu001",
-  name: "Rahul Sharma",
-  department: "CSE",
-  cgpa: 8.6,
-  email: "rahul@example.com",
-};
-
-const companies = [
-  { id: "c1", name: "Acme Corp", location: "Bangalore", industry: "Software" },
-  { id: "c2", name: "TechSolutions", location: "Hyderabad", industry: "IT Services" },
-  { id: "c3", name: "Global Innovate", location: "Pune", industry: "Consulting" },
-];
-
-const jobs = [
-  { id: "j1", title: "Frontend Developer", package: 6, companyId: "c1" },
-  { id: "j2", title: "Data Analyst", package: 5, companyId: "c2" },
-  { id: "j3", title: "Product Manager", package: 8, companyId: "c3" },
-];
+import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+  
+declare module "next-auth" {
+  interface Session {
+    user?: {
+      studentId?: string;
+    };
+  }
+}
+import {
+  FaUserCircle,
+  FaBriefcase,
+  FaCheckCircle,
+  FaLaptop,
+  FaMapMarkerAlt,
+  FaTag,
+} from "react-icons/fa";
 
 export default function StudentDashboard() {
-  const [applications, setApplications] = useState<
-    { id: string; jobId: string; status: string }[]
-  >([]);
+  const { data: session, status } = useSession();
+  const [student, setStudent] = useState<any>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  function applyToJob(jobId: string) {
-    if (applications.some((a) => a.jobId === jobId)) return;
-    setApplications((prev) => [
-      ...prev,
-      { id: `a${Date.now()}`, jobId, status: "Applied" },
-    ]);
-  }
+  const studentId = session?.user?.studentId;
+
+  useEffect(() => {
+    if (!studentId) return;
+
+    async function fetchData() {
+      try {
+        const [profileRes, jobsRes, appRes] = await Promise.all([
+          fetch(`/api/student?type=profile&studentId=${studentId}`),
+          fetch(`/api/student?type=jobs`),
+          fetch(`/api/student?type=applications&studentId=${studentId}`),
+        ]);
+
+        const profile = await profileRes.json();
+        const jobs = await jobsRes.json();
+        const applications = await appRes.json();
+
+        setStudent(profile);
+        setJobs(jobs);
+        setApplications(applications);
+      } catch (err) {
+        console.error("Error fetching student dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [studentId]);
+
+  if (status === "loading" || loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-500 text-lg">
+        Loading...
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
@@ -43,7 +69,9 @@ export default function StudentDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold tracking-tight">Student Dashboard</h1>
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">Welcome, {student.name}</span>
+            <span className="text-sm font-medium">
+              Welcome, {student?.name || "Student"}
+            </span>
             <FaUserCircle className="text-xl" />
           </div>
         </div>
@@ -58,22 +86,10 @@ export default function StudentDashboard() {
             <span>My Profile</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-gray-700">
-            <p className="flex flex-col">
-              <span className="text-sm font-medium text-gray-500">Name</span>
-              <span className="mt-1 font-semibold">{student.name}</span>
-            </p>
-            <p className="flex flex-col">
-              <span className="text-sm font-medium text-gray-500">Department</span>
-              <span className="mt-1 font-semibold">{student.department}</span>
-            </p>
-            <p className="flex flex-col">
-              <span className="text-sm font-medium text-gray-500">CGPA</span>
-              <span className="mt-1 font-semibold">{student.cgpa}</span>
-            </p>
-            <p className="flex flex-col">
-              <span className="text-sm font-medium text-gray-500">Email</span>
-              <span className="mt-1 font-semibold">{student.email}</span>
-            </p>
+            <p><strong>Name:</strong> {student?.name}</p>
+            <p><strong>Department:</strong> {student?.department}</p>
+            <p><strong>CGPA:</strong> {student?.cgpa}</p>
+            <p><strong>Email:</strong> {student?.email}</p>
           </div>
         </div>
 
@@ -84,37 +100,26 @@ export default function StudentDashboard() {
             <span>Available Jobs</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job) => {
-              const company = companies.find((c) => c.id === job.companyId);
-              return (
-                <div key={job.id} className="bg-gray-50 border border-gray-200 rounded-lg p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">{job.title}</h3>
-                    <p className="text-sm text-gray-600 flex items-center space-x-1 mt-1">
-                      <FaLaptop className="text-xs" />
-                      <span>{company?.name}</span>
-                    </p>
-                    <div className="mt-3 text-sm text-gray-700 space-y-2">
-                      <p className="flex items-center space-x-2">
-                        <FaTag className="text-gray-400" />
-                        <span>Package: <span className="font-semibold">{job.package} LPA</span></span>
-                      </p>
-                      <p className="flex items-center space-x-2">
-                        <FaMapMarkerAlt className="text-gray-400" />
-                        <span>Location: <span className="font-semibold">{company?.location}</span></span>
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => applyToJob(job.id)}
-                    className="mt-6 w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                    disabled={applications.some(a => a.jobId === job.id)}
-                  >
-                    {applications.some(a => a.jobId === job.id) ? "Applied" : "Apply Now"}
-                  </button>
+            {jobs.length === 0 ? (
+              <p className="text-gray-500">No jobs available right now.</p>
+            ) : (
+              jobs.map((job) => (
+                <div key={job.id} className="border p-5 rounded-lg shadow-sm bg-gray-50">
+                  <h3 className="text-lg font-semibold">{job.title}</h3>
+                  <p className="text-sm text-gray-600 flex items-center space-x-1 mt-1">
+                    <FaLaptop className="text-xs" />
+                    <span>{job.company?.name}</span>
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1 flex items-center">
+                    <FaMapMarkerAlt className="mr-1" /> {job.location}
+                  </p>
+                  <p className="text-sm mt-1">
+                    <FaTag className="inline text-gray-400 mr-1" />
+                    Package: <strong>{job.package} LPA</strong>
+                  </p>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
 
@@ -125,29 +130,24 @@ export default function StudentDashboard() {
             <span>My Applications</span>
           </h2>
           {applications.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">You have not applied to any jobs yet.</p>
+            <p className="text-gray-500 text-center py-4">
+              You haven’t applied to any jobs yet.
+            </p>
           ) : (
-            <div className="space-y-4">
-              {applications.map((app) => {
-                const job = jobs.find((j) => j.id === app.jobId);
-                return (
-                  <div
-                    key={app.id}
-                    className="bg-gray-50 p-4 rounded-lg flex justify-between items-center border border-gray-200"
-                  >
-                    <p className="font-semibold text-gray-800">{job?.title}</p>
-                    <span className="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-700">
-                      {app.status}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="space-y-3">
+              {applications.map((app) => (
+                <div key={app.id} className="flex justify-between bg-gray-50 p-4 rounded-lg border">
+                  <p>{app.job?.title}</p>
+                  <span className="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-700">
+                    {app.status}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </main>
-      
-      {/* Footer */}
+
       <footer className="bg-gray-200 text-center py-4 text-gray-600 text-sm">
         © {new Date().getFullYear()} Placement Cell. All rights reserved.
       </footer>
